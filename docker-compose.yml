@@ -11,22 +11,26 @@ services:
     working_dir: /var/www
     volumes:
       - ./:/var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
     networks:
       - laravel_net
 
   # Nginx Service
   nginx:
-    image: nginx:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     container_name: laravel_nginx
     restart: unless-stopped
     ports:
-      - "8081:80"  # Map host's port 8081 to container's port 80 for Nginx
+      - "8081:80"
     volumes:
-      - ./:/var/www  # Mount Laravel application code to Nginx
-#      - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Main Nginx config
-      - ./nginx/conf.d:/etc/nginx/conf.d  # Additional Nginx config files
+      - ./:/var/www
+      - ./nginx/conf.d:/etc/nginx/conf.d
     depends_on:
-      - laravel_app  # Ensure the app is running before Nginx
+      - laravel_app
     networks:
       - laravel_net
 
@@ -36,12 +40,14 @@ services:
     container_name: laravel_db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: laravel_blog_test
-      MYSQL_ROOT_PASSWORD: 
-      MYSQL_USER: laravel_user
-      MYSQL_PASSWORD: 
+      MYSQL_DATABASE: ${DB_DATABASE:-laravel_blog_test}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME:-laravel_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - dbdata:/var/lib/mysql
+    ports:
+      - "3306:3306"
     networks:
       - laravel_net
 
@@ -50,6 +56,8 @@ services:
     image: redis:alpine
     container_name: laravel_redis
     restart: unless-stopped
+    ports:
+      - "6379:6379"
     networks:
       - laravel_net
 
