@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Laravel Application
+  laravel_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - laravel_net
+
+  # Nginx Service
+  nginx:
+    image: nginx:alpine
+    container_name: laravel_nginx
+    restart: unless-stopped
+    ports:
+      - "8081:80"  # Map host's port 8081 to container's port 80 for Nginx
+    volumes:
+      - ./:/var/www  # Mount Laravel application code to Nginx
+#      - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Main Nginx config
+      - ./nginx/conf.d:/etc/nginx/conf.d  # Additional Nginx config files
+    depends_on:
+      - laravel_app  # Ensure the app is running before Nginx
+    networks:
+      - laravel_net
+
+  # MySQL Service
+  db:
+    image: mysql:8.0
+    container_name: laravel_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: laravel_blog_test
+      MYSQL_ROOT_PASSWORD: 
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: 
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - laravel_net
+
+  # Redis Service
+  redis:
+    image: redis:alpine
+    container_name: laravel_redis
+    restart: unless-stopped
+    networks:
+      - laravel_net
+
+networks:
+  laravel_net:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
